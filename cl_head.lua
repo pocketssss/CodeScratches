@@ -1,22 +1,61 @@
-local HeadTimeRotate = 8 
+local PANEL = {}
+local sx, sy = input.GetCursorPos()
+local HeadTimeRotate = 8
 
-function PANEL:PreDrawModel = function(ent) 
+function PANEL:Init()
+    self:SetSize(ScrW(), ScrH())
+    self:SetMouseInputEnabled(true)
+    self:SetKeyboardInputEnabled(true)
+    self:SetVisible(true)
+    self:SetCursor("none")
+end
 
-    local head = ent:LookupBone("ValveBiped.Bip01_Head1") 
-    if head < 0 then return end -- if head = nil then return end 
+function PANEL:Paint(w, h)
+    draw.NoTexture()
+    surface.SetDrawColor(Color(0, 0, 0))
+    surface.DrawRect(0, 0, w, h)
+end
 
-    local pos,angle = ent:GetBonePosition( head )   -- pose your bone 
-    local sx,sy = input.GetCursorPos() -- get cordinats x and y 
+function PANEL:OnCursorMoved(x, y)
+    self.playerModelPanel.sxLerp = x
+    self.playerModelPanel.syLerp = y
+end
 
-    self.sxLerp = Lerp(FrameTime() * HeadTimeRotate , PlayerModel.sxLerp,sx); -- lerp move head to pos your mouse to horizontal
-    self.syLerp = Lerp(FrameTime() * HeadTimeRotate , PlayerModel.syLerp,sy); -- lerp move head to pos your mouse to vertical 
+function PANEL:PreDrawModel(ent)
+    local head = ent:LookupBone("ValveBiped.Bip01_Head1")
+    local pos, angle = ent:GetBonePosition(head)
+    if not head then return end -- Use "not" instead of "< 0" to check if head is nil
 
-    local normalizedVector = util.AimVector(Angle(0,180,0),90,-self.sxLerp,self.syLerp , ScrW() * 1 ,ScrH() * 1); -- get normalizedVector 
-    normalizedVector = normalizedVector -- anti error :3
+    self.sxLerp = Lerp(FrameTime() * HeadTimeRotate, self.sxLerp or sx, sx) -- Use self.sxLerp or sx as initial value to avoid errors
+    self.syLerp = Lerp(FrameTime() * HeadTimeRotate, self.syLerp or sy, sy)
 
-    angle:RotateAroundAxis(Vector(0,1,0), (-math.asin( normalizedVector.z * 2 )  * 90) - 10  ); 
-    angle:RotateAroundAxis(Vector(0,0,1), (math.atan2(normalizedVector.y  * 1,normalizedVector.x * 6) * 180))
-    angle:RotateAroundAxis(Vector(0,0,1), 90 - (sx / ScrW()))
+    local normalizedVector = util.AimVector(Angle(0, 180, 0), 90, -self.sxLerp, self.syLerp, ScrW() * 1, ScrH() * 1)
+    angle:RotateAroundAxis(Vector(0, 1, 0), (-math.asin(normalizedVector.z * 2) * 90) - 10)
+    angle:RotateAroundAxis(Vector(0, 0, 1), (math.atan2(normalizedVector.y * 1, normalizedVector.x * 6) * 180))
+    angle:RotateAroundAxis(Vector(0, 0, 1), 90 - (sx / ScrW()))
 
     ent:SetBonePosition(head, pos, angle)
- end
+end
+
+function PANEL:SetPlayerModel(model)
+if self.playerModelPanel then self.playerModelPanel:Remove() end
+    self.playerModelPanel = vgui.Create("DModelPanel", self)
+    self.playerModelPanel:SetModel(model)
+    self.playerModelPanel:Dock(FILL)
+    self.playerModelPanel:SetCamPos(Vector(70, 0, 50))
+    self.playerModelPanel:SetLookAt(Vector(0, 0, 50))
+    self.playerModelPanel.LayoutEntity = function() end
+        self.playerModelPanel.PreDrawModel = function(_, ent)
+            PANEL:PreDrawModel(ent)
+        end
+end
+
+vgui.Register("RotateModel", PANEL, "EditablePanel")
+
+
+// Usage / Example 
+//
+// local rotateModelPanel = vgui.Create("RotateModel")
+// rotateModelPanel:SetPlayerModel("models/player.mdl") 
+//
+// Usage / Exmaple 
