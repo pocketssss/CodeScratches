@@ -1,17 +1,10 @@
-local NW2Functions = {
-	["Angle"] = true,
-	["Bool"] = true,
-	["Entity"] = true,
-	["Vector"] = true,
-	["Float"] = true,
-	["Int"] = true,
-	["String"] = true,
-}
-
 local function UpdateNW2Functions(ENTITY)
-	for k, v in pairs(NW2Functions) do
-		ENTITY["SetNW" .. k] = ENTITY["SetNW2" .. k]
-		ENTITY["GetNW" .. k] = ENTITY["GetNW2" .. k]
+	local functions = {"Angle", "Bool", "Entity", "Vector", "Float", "Int", "String"}
+
+	for i = 1, #functions do
+		local functionName = functions[i]
+		ENTITY["SetNW" .. functionName] = ENTITY["SetNW2" .. functionName]
+		ENTITY["GetNW" .. functionName] = ENTITY["GetNW2" .. functionName]
 	end
 
 	ENTITY.SetNetworkedNumber = ENTITY.SetNW2Int
